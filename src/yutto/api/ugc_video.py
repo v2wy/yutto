@@ -140,14 +140,14 @@ async def get_ugc_video_list(ctx: FetcherContext, client: AsyncClient, avid: AvI
         "pubdate": video_info["pubdate"],
         "pages": [],
     }
-    list_api = "https://api.bilibili.com/x/player/pagelist?aid={aid}&bvid={bvid}&jsonp=jsonp"
+    list_api = "https://api.bilibili.com/x/web-interface/wbi/view/detail?aid={aid}&bvid={bvid}"
     res_json = await Fetcher.fetch_json(ctx, client, list_api.format(**avid.to_dict()))
     if res_json is None or res_json.get("data") is None:
         Logger.warning(f"啊叻？视频 {avid} 不见了诶")
         return result
 
     # 对无意义的分 p 视频名进行修改
-    for i, (item, page_info) in enumerate(zip(cast("list[Any]", res_json["data"]), video_info["pages"], strict=True)):
+    for i, (item, page_info) in enumerate(zip(cast("list[Any]", res_json["data"]["View"]["pages"]), video_info["pages"], strict=True)):
         # TODO: 这里 part 出现了两次，需要都修改，后续去除其中一个冗余数据
         if _is_meaningless_name(item["part"]):
             item["part"] = f"{video_title}_P{i + 1:02}"
@@ -163,7 +163,7 @@ async def get_ugc_video_list(ctx: FetcherContext, client: AsyncClient, avid: AvI
             "metadata": _parse_ugc_video_metadata(video_info, page_info, is_first_page=i == 0),
         }
         for i, (item, page_info) in enumerate(
-            zip(cast("list[Any]", res_json["data"]), video_info["pages"], strict=True)
+            zip(cast("list[Any]", res_json["data"]["View"]["pages"]), video_info["pages"], strict=True)
         )
     ]
     return result
